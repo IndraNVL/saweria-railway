@@ -7,7 +7,7 @@ app.use(express.json());
 app.get("/", (req, res) => {
     res.json({
         status: "online",
-        message: "Saweria Railway Server Online"
+        message: "Saweria KALCERLOUNGE Railway Online"
     });
 });
 
@@ -17,14 +17,47 @@ app.get("/health", (req, res) => {
     });
 });
 
-app.post("/saweria", (req, res) => {
-    console.log("Data Saweria diterima:");
-    console.log(req.body);
+app.post("/saweria", async (req, res) => {
+    try {
+        console.log("Data Saweria diterima:");
+        console.log(req.body);
 
-    res.json({
-        success: true,
-        message: "Data diterima"
-    });
+        const googleScriptUrl = process.env.GOOGLE_SCRIPT_URL;
+
+        if (!googleScriptUrl) {
+            return res.status(500).json({
+                success: false,
+                message: "GOOGLE_SCRIPT_URL belum diatur"
+            });
+        }
+
+        const response = await fetch(googleScriptUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(req.body)
+        });
+
+        const result = await response.text();
+
+        console.log("Response Google Script:");
+        console.log(result);
+
+        res.json({
+            success: true,
+            message: "Data diteruskan ke Google Script",
+            googleResponse: result
+        });
+
+    } catch (error) {
+        console.error(error);
+
+        res.status(500).json({
+            success: false,
+            error: error.toString()
+        });
+    }
 });
 
 const PORT = process.env.PORT || 3000;
